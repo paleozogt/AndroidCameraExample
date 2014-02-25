@@ -37,10 +37,6 @@ import android.view.WindowManager;
 import java.io.IOException;
 import java.util.List;
 
-// Need the following import to get access to the app resources, since this
-// class is in a sub-package.
-import com.example.android.apis.R;
-
 // ----------------------------------------------------------------------
 
 public class CameraExample extends Activity {
