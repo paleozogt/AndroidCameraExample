@@ -19,6 +19,7 @@ package org.paleozogt.camexample;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Size;
@@ -27,6 +28,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -66,12 +68,12 @@ public class CameraExample extends Activity {
 
         // Find the ID of the default camera
         CameraInfo cameraInfo = new CameraInfo();
-            for (int i = 0; i < numberOfCameras; i++) {
-                Camera.getCameraInfo(i, cameraInfo);
-                if (cameraInfo.facing == CameraInfo.CAMERA_FACING_BACK) {
-                    defaultCameraId = i;
-                }
+        for (int i = 0; i < numberOfCameras; i++) {
+            Camera.getCameraInfo(i, cameraInfo);
+            if (cameraInfo.facing == CameraInfo.CAMERA_FACING_FRONT) {
+                defaultCameraId = i;
             }
+        }
     }
 
     @Override
@@ -79,7 +81,7 @@ public class CameraExample extends Activity {
         super.onResume();
 
         // Open the default i.e. the first rear facing camera.
-        mCamera = Camera.open();
+        mCamera = openCamera(defaultCameraId);
         cameraCurrentlyLocked = defaultCameraId;
         mPreview.setCamera(mCamera);
     }
@@ -132,8 +134,7 @@ public class CameraExample extends Activity {
 
             // Acquire the next camera and request Preview to reconfigure
             // parameters.
-            mCamera = Camera
-                    .open((cameraCurrentlyLocked + 1) % numberOfCameras);
+            mCamera = openCamera((cameraCurrentlyLocked + 1) % numberOfCameras);
             cameraCurrentlyLocked = (cameraCurrentlyLocked + 1)
                     % numberOfCameras;
             mPreview.switchCamera(mCamera);
@@ -144,6 +145,41 @@ public class CameraExample extends Activity {
         default:
             return super.onOptionsItemSelected(item);
         }
+    }
+
+    protected Camera openCamera(int camIdx) {
+        Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+        Camera.getCameraInfo(camIdx, cameraInfo);
+        Camera camera= Camera.open(camIdx);
+
+        int degrees= getRotationDegrees(this);
+        int displayOrientation = (cameraInfo.orientation + degrees) % 360;
+        displayOrientation = (360 - displayOrientation) % 360; // compensate the mirror
+
+        camera.setDisplayOrientation(displayOrientation);
+
+        return camera;
+    }
+
+    protected static int getRotationDegrees(Context ctx) {
+        WindowManager wm= (WindowManager)ctx.getSystemService(Context.WINDOW_SERVICE);
+        int rotation = wm.getDefaultDisplay().getRotation();
+        int degrees = 0;
+        switch (rotation) {
+            case Surface.ROTATION_0:
+                degrees = 0;
+                break;
+            case Surface.ROTATION_90:
+                degrees = 90;
+                break;
+            case Surface.ROTATION_180:
+                degrees = 180;
+                break;
+            case Surface.ROTATION_270:
+                degrees = 270;
+                break;
+        }
+        return degrees;
     }
 }
 
@@ -203,11 +239,17 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
         // We purposely disregard child measurements because act as a
         // wrapper to a SurfaceView that centers the camera preview instead
         // of stretching it.
-        final int width = resolveSize(getSuggestedMinimumWidth(), widthMeasureSpec);
-        final int height = resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
+        int width = resolveSize(getSuggestedMinimumWidth(), widthMeasureSpec);
+        int height = resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
         setMeasuredDimension(width, height);
 
         if (mSupportedPreviewSizes != null) {
+            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                int t= width;
+                width= height;
+                height= t;
+            }
+
             mPreviewSize = getOptimalPreviewSize(mSupportedPreviewSizes, width, height);
         }
     }
@@ -223,8 +265,13 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
             int previewWidth = width;
             int previewHeight = height;
             if (mPreviewSize != null) {
-                previewWidth = mPreviewSize.width;
-                previewHeight = mPreviewSize.height;
+                if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                    previewWidth = mPreviewSize.height;
+                    previewHeight = mPreviewSize.width;
+                } else {
+                    previewWidth = mPreviewSize.width;
+                    previewHeight = mPreviewSize.height;
+                }
             }
 
             // Center the child SurfaceView within the parent.
