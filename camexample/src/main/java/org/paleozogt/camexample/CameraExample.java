@@ -91,7 +91,7 @@ public class CameraExample extends Activity {
 
     protected void relaunch() {
         finish();
-        startActivity(new Intent(CameraExample.this, CameraExample.class)
+        startActivity(new Intent(this, this.getClass())
                 .putExtra("previewWidth", mPreviewWidth)
                 .putExtra("previewHeight", mPreviewHeight)
                 .putExtra("recordingHint", mRecordingHint)
