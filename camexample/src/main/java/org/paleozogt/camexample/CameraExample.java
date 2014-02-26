@@ -71,24 +71,6 @@ public class CameraExample extends Activity {
         mRecordingHint= intent.getBooleanExtra("recordingHint", false);
 
         _cameraSizeView= (TextView)findViewById(R.id.camera_size);
-        _cameraSizeView.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                AlertDialog.Builder builder= new AlertDialog.Builder(CameraExample.this);
-                final List<Size> sizes= mPreview.getSupportedCameraSizes();
-                final String[] labels= sizesToLabels(sizes);
-                builder.setTitle(R.string.choose_camera_size);
-                builder.setItems(labels, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Size size= sizes.get(which);
-                        mPreviewWidth= size.width;
-                        mPreviewHeight= size.height;
-                        relaunch();
-                    }
-                });
-                builder.create().show();
-            }
-        });
 
         // Create a RelativeLayout container that will hold a SurfaceView,
         // and set it as a view on our activity
@@ -185,6 +167,22 @@ public class CameraExample extends Activity {
         case R.id.toggle_recording_hint:
             mRecordingHint= !mRecordingHint;
             relaunch();
+            return true;
+        case R.id.switch_resolution:
+            AlertDialog.Builder builder= new AlertDialog.Builder(CameraExample.this);
+            final List<Size> sizes= mPreview.getSupportedCameraSizes();
+            final String[] labels= sizesToLabels(sizes);
+            builder.setTitle(R.string.choose_camera_size);
+            builder.setItems(labels, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Size size= sizes.get(which);
+                    mPreviewWidth= size.width;
+                    mPreviewHeight= size.height;
+                    relaunch();
+                }
+            });
+            builder.create().show();
             return true;
         default:
             return super.onOptionsItemSelected(item);

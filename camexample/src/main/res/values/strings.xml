@@ -7,6 +7,7 @@
     <string name="take_picture">Take Picture</string>
     <string name="switch_cam">Switch Camera</string>
     <string name="toggle_recording_hint">Toggle Recording Hint</string>
+    <string name="switch_resolution">Switch Resolution</string>
     <string name="choose_camera_size">Choose Camera Size</string>
     <string name="camera_alert">Device has only one camera!</string>
 </resources>
