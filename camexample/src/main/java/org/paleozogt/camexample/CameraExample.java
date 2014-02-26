@@ -53,6 +53,7 @@ public class CameraExample extends Activity {
     int cameraCurrentlyLocked;
 
     int mPreviewWidth, mPreviewHeight;
+    boolean mRecordingHint;
 
     // The first rear facing camera
     int defaultCameraId;
@@ -67,6 +68,7 @@ public class CameraExample extends Activity {
         Intent intent= getIntent();
         mPreviewWidth= intent.getIntExtra("previewWidth", -1);
         mPreviewHeight= intent.getIntExtra("previewHeight", -1);
+        mRecordingHint= intent.getBooleanExtra("recordingHint", false);
 
         _cameraSizeView= (TextView)findViewById(R.id.camera_size);
         _cameraSizeView.setOnClickListener(new View.OnClickListener() {
@@ -79,13 +81,9 @@ public class CameraExample extends Activity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         Size size= sizes.get(which);
-
-                        finish();
-                        startActivity(new Intent(CameraExample.this, CameraExample.class)
-                                .putExtra("previewWidth", size.width)
-                                .putExtra("previewHeight", size.height)
-                        );
-
+                        mPreviewWidth= size.width;
+                        mPreviewHeight= size.height;
+                        relaunch();
                     }
                 });
                 builder.create().show();
@@ -107,6 +105,15 @@ public class CameraExample extends Activity {
                 defaultCameraId = i;
             }
         }
+    }
+
+    protected void relaunch() {
+        finish();
+        startActivity(new Intent(CameraExample.this, CameraExample.class)
+                .putExtra("previewWidth", mPreviewWidth)
+                .putExtra("previewHeight", mPreviewHeight)
+                .putExtra("recordingHint", mRecordingHint)
+        );
     }
 
     @Override
@@ -175,6 +182,10 @@ public class CameraExample extends Activity {
             // Start the preview
             mCamera.startPreview();
             return true;
+        case R.id.toggle_recording_hint:
+            mRecordingHint= !mRecordingHint;
+            relaunch();
+            return true;
         default:
             return super.onOptionsItemSelected(item);
         }
@@ -190,6 +201,10 @@ public class CameraExample extends Activity {
         displayOrientation = (360 - displayOrientation) % 360; // compensate the mirror
 
         camera.setDisplayOrientation(displayOrientation);
+
+        Camera.Parameters params= camera.getParameters();
+        params.setRecordingHint(mRecordingHint);
+        camera.setParameters(params);
 
         // TODO: this is hackery
         new Handler().post(new Runnable() {
