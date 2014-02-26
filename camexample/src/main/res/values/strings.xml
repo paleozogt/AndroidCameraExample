@@ -10,4 +10,9 @@
     <string name="switch_resolution">Switch Resolution</string>
     <string name="choose_camera_size">Choose Camera Size</string>
     <string name="camera_alert">Device has only one camera!</string>
+
+    <string name="camera_front">Front Camera</string>
+    <string name="camera_back">Back Camera</string>
+
+    <string name="recording_hint">Recording Hint: %s</string>
 </resources>

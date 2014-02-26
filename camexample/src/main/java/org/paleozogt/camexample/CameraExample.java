@@ -40,13 +40,14 @@ import java.util.List;
 public class CameraExample extends Activity {
     private CameraPreview mPreview;
     Camera mCamera;
+    CameraInfo mCameraInfo;
     int numberOfCameras;
 
     int mPreviewWidth, mPreviewHeight;
     boolean mRecordingHint;
     int mCameraId;
 
-    protected TextView _cameraSizeView;
+    protected TextView mCameraInfoView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +60,7 @@ public class CameraExample extends Activity {
         mPreviewHeight= intent.getIntExtra("previewHeight", -1);
         mRecordingHint= intent.getBooleanExtra("recordingHint", false);
 
-        _cameraSizeView= (TextView)findViewById(R.id.camera_size);
+        mCameraInfoView = (TextView)findViewById(R.id.camera_info);
 
         // Create a RelativeLayout container that will hold a SurfaceView,
         // and set it as a view on our activity
@@ -95,7 +96,7 @@ public class CameraExample extends Activity {
         super.onResume();
 
         // Open the default i.e. the first rear facing camera.
-        mCamera = openCamera(mCameraId);
+        openCamera(mCameraId);
         mPreview.setCamera(mCamera, mPreviewWidth, mPreviewHeight);
     }
 
@@ -166,20 +167,20 @@ public class CameraExample extends Activity {
         }
     }
 
-    protected Camera openCamera(int camIdx) {
-        Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
-        Camera.getCameraInfo(camIdx, cameraInfo);
-        Camera camera= Camera.open(camIdx);
+    protected void openCamera(int camIdx) {
+        mCameraInfo = new Camera.CameraInfo();
+        Camera.getCameraInfo(camIdx, mCameraInfo);
+        mCamera= Camera.open(camIdx);
 
         int degrees= getRotationDegrees(this);
-        int displayOrientation = (cameraInfo.orientation + degrees) % 360;
+        int displayOrientation = (mCameraInfo.orientation + degrees) % 360;
         displayOrientation = (360 - displayOrientation) % 360; // compensate the mirror
 
-        camera.setDisplayOrientation(displayOrientation);
+        mCamera.setDisplayOrientation(displayOrientation);
 
-        Camera.Parameters params= camera.getParameters();
+        Camera.Parameters params= mCamera.getParameters();
         params.setRecordingHint(mRecordingHint);
-        camera.setParameters(params);
+        mCamera.setParameters(params);
 
         // TODO: this is hackery
         new Handler().post(new Runnable() {
@@ -189,12 +190,20 @@ public class CameraExample extends Activity {
                 if (size == null) {
                     new Handler().post(this);
                 } else {
-                    _cameraSizeView.setText(sizeToString(size));
+                    mCameraInfoView.setText(getCameraInfoString());
                 }
             }
         });
+    }
 
-        return camera;
+    protected String getCameraInfoString() {
+        return
+                getResources().getString( mCameraInfo.facing == CameraInfo.CAMERA_FACING_FRONT ? R.string.camera_front : R.string.camera_back) +
+                "\n" +
+                String.format(getResources().getString(R.string.recording_hint), mRecordingHint) +
+                "\n" +
+                sizeToString(mPreview.getPreviewSize())
+                ;
     }
 
     protected static int getRotationDegrees(Context ctx) {

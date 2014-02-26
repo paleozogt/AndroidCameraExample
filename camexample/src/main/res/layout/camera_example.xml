@@ -15,18 +15,19 @@
         android:id="@+id/button_capture"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center"
+        android:layout_gravity="bottom|left"
+        android:textColor="#AAAAAA"
         android:text="@string/take_picture" />
 
     <TextView
-        android:id="@+id/camera_size"
+        android:id="@+id/camera_info"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|right"
         android:paddingLeft="2dip"
         android:paddingRight="2dip"
-        android:textColor="#FFFFFF"
-        android:background="#99000000"
+        android:textColor="#AAAAAA"
+        android:background="#88000000"
         />
 
 </FrameLayout>
