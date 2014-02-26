@@ -157,11 +157,16 @@ class CameraPreview extends ViewGroup implements SurfaceHolder.Callback {
         // Now that the size is known, set up the camera parameters and begin
         // the preview.
         Camera.Parameters parameters = mCamera.getParameters();
+        Log.d(TAG, "setting camera preview size= " + mPreviewSize.width + "x" + mPreviewSize.height);
         parameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
         requestLayout();
 
         mCamera.setParameters(parameters);
         mCamera.startPreview();
+
+        parameters= mCamera.getParameters();
+        Camera.Size roundTrippedPreviewSize= parameters.getPreviewSize();
+        Log.d(TAG, "camera preview size= " + roundTrippedPreviewSize.width + "x" + roundTrippedPreviewSize.height);
     }
 
     private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
