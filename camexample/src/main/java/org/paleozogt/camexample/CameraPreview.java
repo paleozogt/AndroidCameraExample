@@ -21,7 +21,7 @@ import java.util.List;
  * support preview sizes at the same aspect ratio as the device's display.
  */
 class CameraPreview extends ViewGroup implements SurfaceHolder.Callback {
-    private final String TAG = "Preview";
+    private final String TAG = this.getClass().getSimpleName();
 
     SurfaceView mSurfaceView;
     SurfaceHolder mHolder;

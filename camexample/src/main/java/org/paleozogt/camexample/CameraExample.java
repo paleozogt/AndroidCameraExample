@@ -21,27 +21,43 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Size;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.Surface;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.TextView;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
 // ----------------------------------------------------------------------
 
-public class CameraExample extends Activity {
+public class CameraExample extends Activity implements Camera.PreviewCallback {
+    private final String TAG = this.getClass().getSimpleName();
     private CameraPreview mPreview;
     Camera mCamera;
     CameraInfo mCameraInfo;
     int numberOfCameras;
+    ImageSaver _imageSaver;
 
     int mPreviewWidth, mPreviewHeight;
     boolean mRecordingHint;
@@ -61,6 +77,14 @@ public class CameraExample extends Activity {
         mRecordingHint= intent.getBooleanExtra("recordingHint", false);
 
         mCameraInfoView = (TextView)findViewById(R.id.camera_info);
+
+        Button captureBtn= (Button)findViewById(R.id.button_capture);
+        captureBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mCamera.setOneShotPreviewCallback(CameraExample.this);
+            }
+        });
 
         // Create a RelativeLayout container that will hold a SurfaceView,
         // and set it as a view on our activity
@@ -89,6 +113,11 @@ public class CameraExample extends Activity {
                 .putExtra("previewHeight", mPreviewHeight)
                 .putExtra("recordingHint", mRecordingHint)
         );
+    }
+
+    @Override
+    public void onPreviewFrame(final byte[] data, Camera camera) {
+        _imageSaver.saveImage(data, camera);
     }
 
     @Override
@@ -182,6 +211,9 @@ public class CameraExample extends Activity {
         Camera.Parameters params= mCamera.getParameters();
         params.setRecordingHint(mRecordingHint);
         mCamera.setParameters(params);
+
+        String fileNameFormat= new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Picture.%d.jpg").toString();
+        _imageSaver= new ImageSaver(fileNameFormat, mCameraInfo.orientation);
 
         // TODO: this is hackery
         new Handler().post(new Runnable() {
