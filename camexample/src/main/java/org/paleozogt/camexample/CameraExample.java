@@ -20,6 +20,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.hardware.Camera;
@@ -51,6 +52,8 @@ public class CameraExample extends Activity {
     int numberOfCameras;
     int cameraCurrentlyLocked;
 
+    int mPreviewWidth, mPreviewHeight;
+
     // The first rear facing camera
     int defaultCameraId;
 
@@ -60,6 +63,10 @@ public class CameraExample extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.camera_example);
+
+        Intent intent= getIntent();
+        mPreviewWidth= intent.getIntExtra("previewWidth", -1);
+        mPreviewHeight= intent.getIntExtra("previewHeight", -1);
 
         _cameraSizeView= (TextView)findViewById(R.id.camera_size);
         _cameraSizeView.setOnClickListener(new View.OnClickListener() {
@@ -72,8 +79,13 @@ public class CameraExample extends Activity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         Size size= sizes.get(which);
-                        mPreview.setPreviewSize(size);
-                        _cameraSizeView.setText(sizeToString(size));
+
+                        finish();
+                        startActivity(new Intent(CameraExample.this, CameraExample.class)
+                                .putExtra("previewWidth", size.width)
+                                .putExtra("previewHeight", size.height)
+                        );
+
                     }
                 });
                 builder.create().show();
@@ -104,7 +116,7 @@ public class CameraExample extends Activity {
         // Open the default i.e. the first rear facing camera.
         mCamera = openCamera(defaultCameraId);
         cameraCurrentlyLocked = defaultCameraId;
-        mPreview.setCamera(mCamera);
+        mPreview.setCamera(mCamera, mPreviewWidth, mPreviewHeight);
     }
 
     @Override

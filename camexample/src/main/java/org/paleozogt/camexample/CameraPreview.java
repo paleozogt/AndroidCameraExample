@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.hardware.Camera;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -30,36 +31,27 @@ class CameraPreview extends ViewGroup implements SurfaceHolder.Callback {
 
     public List<Camera.Size> getSupportedCameraSizes() { return mSupportedPreviewSizes; }
     public Camera.Size getPreviewSize() { return mPreviewSize; }
-    public void setPreviewSize(Camera.Size size) {
-        mPreviewSize= size;
-        Log.d(TAG, "setting camera size to " + size.width + "x" + size.height);
-
-        mCamera.stopPreview();
-
-        Camera.Parameters parameters = mCamera.getParameters();
-        parameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
-        mCamera.setParameters(parameters);
-        mCamera.startPreview();
-   }
 
     public CameraPreview(Context context, AttributeSet attribs) {
         super(context, attribs);
         setBackgroundColor(Color.TRANSPARENT);
 
-        mSurfaceView = new SurfaceView(context);
-        addView(mSurfaceView);
-
-        // Install a SurfaceHolder.Callback so we get notified when the
-        // underlying surface is created and destroyed.
-        mHolder = mSurfaceView.getHolder();
-        mHolder.addCallback(this);
-        mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        setupSurface();
     }
 
     public void setCamera(Camera camera) {
+        setCamera(camera, -1, -1);
+    }
+
+    public void setCamera(Camera camera, int previewWidth, int previewHeight) {
         mCamera = camera;
         if (mCamera != null) {
             mSupportedPreviewSizes = mCamera.getParameters().getSupportedPreviewSizes();
+            for (Camera.Size size : mSupportedPreviewSizes) {
+                if (size.width == previewWidth && size.height == previewHeight) {
+                    mPreviewSize= size;
+                }
+            }
             requestLayout();
         }
     }
@@ -78,6 +70,17 @@ class CameraPreview extends ViewGroup implements SurfaceHolder.Callback {
        camera.setParameters(parameters);
     }
 
+    protected void setupSurface() {
+        mSurfaceView = new SurfaceView(getContext());
+        addView(mSurfaceView);
+
+        // Install a SurfaceHolder.Callback so we get notified when the
+        // underlying surface is created and destroyed.
+        mHolder = mSurfaceView.getHolder();
+        mHolder.addCallback(this);
+        mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         // We purposely disregard child measurements because act as a
@@ -87,7 +90,7 @@ class CameraPreview extends ViewGroup implements SurfaceHolder.Callback {
         int height = resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
         setMeasuredDimension(width, height);
 
-        if (mSupportedPreviewSizes != null) {
+        if (mSupportedPreviewSizes != null && mPreviewSize == null) {
             if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
                 int t= width;
                 width= height;
@@ -150,6 +153,16 @@ class CameraPreview extends ViewGroup implements SurfaceHolder.Callback {
         }
     }
 
+    public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
+        // Now that the size is known, set up the camera parameters and begin
+        // the preview.
+        Camera.Parameters parameters = mCamera.getParameters();
+        parameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
+        requestLayout();
+
+        mCamera.setParameters(parameters);
+        mCamera.startPreview();
+    }
 
     private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
         final double ASPECT_TOLERANCE = 0.1;
@@ -184,15 +197,5 @@ class CameraPreview extends ViewGroup implements SurfaceHolder.Callback {
         return optimalSize;
     }
 
-    public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
-        // Now that the size is known, set up the camera parameters and begin
-        // the preview.
-        Camera.Parameters parameters = mCamera.getParameters();
-        parameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
-        requestLayout();
-
-        mCamera.setParameters(parameters);
-        mCamera.startPreview();
-    }
 
 }
