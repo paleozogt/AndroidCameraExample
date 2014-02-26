@@ -174,7 +174,8 @@ public class CameraExample extends Activity {
 
         int degrees= getRotationDegrees(this);
         int displayOrientation = (mCameraInfo.orientation + degrees) % 360;
-        displayOrientation = (360 - displayOrientation) % 360; // compensate the mirror
+        if (mCameraInfo.facing == CameraInfo.CAMERA_FACING_FRONT)
+            displayOrientation = (360 - displayOrientation) % 360; // compensate the mirror
 
         mCamera.setDisplayOrientation(displayOrientation);
 
