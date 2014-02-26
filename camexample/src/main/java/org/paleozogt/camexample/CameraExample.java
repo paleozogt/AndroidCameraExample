@@ -21,27 +21,18 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Configuration;
-import android.graphics.Color;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Size;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.FrameLayout;
 import android.widget.TextView;
 
-import java.io.IOException;
 import java.util.List;
 
 // ----------------------------------------------------------------------
@@ -50,13 +41,10 @@ public class CameraExample extends Activity {
     private CameraPreview mPreview;
     Camera mCamera;
     int numberOfCameras;
-    int cameraCurrentlyLocked;
 
     int mPreviewWidth, mPreviewHeight;
     boolean mRecordingHint;
-
-    // The first rear facing camera
-    int defaultCameraId;
+    int mCameraId;
 
     protected TextView _cameraSizeView;
 
@@ -66,6 +54,7 @@ public class CameraExample extends Activity {
         setContentView(R.layout.camera_example);
 
         Intent intent= getIntent();
+        mCameraId    = intent.getIntExtra("cameraId", -1);
         mPreviewWidth= intent.getIntExtra("previewWidth", -1);
         mPreviewHeight= intent.getIntExtra("previewHeight", -1);
         mRecordingHint= intent.getBooleanExtra("recordingHint", false);
@@ -79,12 +68,14 @@ public class CameraExample extends Activity {
         // Find the total number of cameras available
         numberOfCameras = Camera.getNumberOfCameras();
 
-        // Find the ID of the default camera
-        CameraInfo cameraInfo = new CameraInfo();
-        for (int i = 0; i < numberOfCameras; i++) {
-            Camera.getCameraInfo(i, cameraInfo);
-            if (cameraInfo.facing == CameraInfo.CAMERA_FACING_FRONT) {
-                defaultCameraId = i;
+        if (mCameraId == -1) {
+            // Find the ID of the default camera
+            CameraInfo cameraInfo = new CameraInfo();
+            for (int i = 0; i < numberOfCameras; i++) {
+                Camera.getCameraInfo(i, cameraInfo);
+                if (cameraInfo.facing == CameraInfo.CAMERA_FACING_FRONT) {
+                    mCameraId = i;
+                }
             }
         }
     }
@@ -92,6 +83,7 @@ public class CameraExample extends Activity {
     protected void relaunch() {
         finish();
         startActivity(new Intent(this, this.getClass())
+                .putExtra("cameraId", mCameraId)
                 .putExtra("previewWidth", mPreviewWidth)
                 .putExtra("previewHeight", mPreviewHeight)
                 .putExtra("recordingHint", mRecordingHint)
@@ -103,8 +95,7 @@ public class CameraExample extends Activity {
         super.onResume();
 
         // Open the default i.e. the first rear facing camera.
-        mCamera = openCamera(defaultCameraId);
-        cameraCurrentlyLocked = defaultCameraId;
+        mCamera = openCamera(mCameraId);
         mPreview.setCamera(mCamera, mPreviewWidth, mPreviewHeight);
     }
 
@@ -145,24 +136,10 @@ public class CameraExample extends Activity {
                 return true;
             }
 
-            // OK, we have multiple cameras.
-            // Release this camera -> cameraCurrentlyLocked
-            if (mCamera != null) {
-                mCamera.stopPreview();
-                mPreview.setCamera(null);
-                mCamera.release();
-                mCamera = null;
-            }
+            // Acquire the next camera and request Preview to reconfigure parameters.
+            mCameraId= (mCameraId + 1) % numberOfCameras;
+            relaunch();
 
-            // Acquire the next camera and request Preview to reconfigure
-            // parameters.
-            mCamera = openCamera((cameraCurrentlyLocked + 1) % numberOfCameras);
-            cameraCurrentlyLocked = (cameraCurrentlyLocked + 1)
-                    % numberOfCameras;
-            mPreview.switchCamera(mCamera);
-
-            // Start the preview
-            mCamera.startPreview();
             return true;
         case R.id.toggle_recording_hint:
             mRecordingHint= !mRecordingHint;
